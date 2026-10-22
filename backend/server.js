@@ -3,12 +3,15 @@ const express = require('express')
 const mongoose = require('mongoose')
 const cors = require('cors')
 
+const authRoutes = require('./routes/auth')
+
 const app = express()
 const PORT = process.env.PORT || 5000
 
 app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173' }))
 app.use(express.json({ limit: '100kb' }))
 
+// Health endpoint
 app.get('/api/health', (req, res) => {
   const connected = mongoose.connection.readyState === 1
   res.status(connected ? 200 : 503).json({
@@ -16,6 +19,9 @@ app.get('/api/health', (req, res) => {
     database: connected ? 'connected' : 'disconnected'
   })
 })
+
+// Authentication routes
+app.use('/api/auth', authRoutes)
 
 async function startServer() {
   try {
@@ -33,4 +39,8 @@ async function startServer() {
   }
 }
 
-startServer()
+if (require.main === module) {
+  startServer()
+}
+
+module.exports = app
