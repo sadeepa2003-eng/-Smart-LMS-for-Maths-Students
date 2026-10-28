@@ -31,7 +31,7 @@ A full-stack **MERN** (MongoDB, Express, React, Node.js) web application designe
 ## ✨ Key Features
 
 ### 👨‍🎓 Student Role
-- **Account Registration & Login:** Public self-registration (strictly sets `role: 'student'`) with encrypted passwords.
+- **Account Registration & Login:** Register as either a student or a teacher (with an administrator-issued invite code), with encrypted passwords.
 - **Maths Study Lessons:** Filter lessons by topic (*Algebra*, *Geometry*, *Straight Lines*) with worked examples and verified external study links (e.g. Khan Academy).
 - **Interactive Quizzes:** Multi-choice questions with server-side validation. Correct answers are withheld until submission.
 - **Instant Detailed Feedback:** Review selected answers versus correct answers with step-by-step solutions and explanations.
@@ -84,7 +84,8 @@ $$\text{Percentage} = \text{round}\left(\frac{\text{Score}}{\text{Total Question
 - `name`: String, required
 - `email`: String, required, unique, lowercase
 - `passwordHash`: String (bcrypt hash)
-- `role`: Enum `['student', 'teacher']`, default: `'student'`
+- `role`: Legacy primary role (`student` or `teacher`) for existing accounts.
+- `roles`: Array containing exactly one of `student` or `teacher` for newly registered accounts.
 - `createdAt`: Date
 
 ### 2. `lessons`
@@ -157,7 +158,10 @@ PORT=5000
 MONGO_URI=mongodb://127.0.0.1:27017/smart_maths_lms
 CLIENT_ORIGIN=http://localhost:5173
 JWT_SECRET=smart_maths_lms_super_secret_key_2026
+TEACHER_INVITE_CODE=replace-with-a-private-invite-code
 ```
+
+Teacher registration is disabled until `TEACHER_INVITE_CODE` is set in the backend environment. Keep this value private and share it only with approved teachers. Select either Student or Teacher during registration; choosing Teacher requires the invite code.
 
 ### Step 3: Install Dependencies & Seed Demo Data
 ```bash
@@ -208,7 +212,8 @@ npm test
 - `✓` **Health Check:** `GET /api/health` reports status 200 and MongoDB connection.
 - `✓` **Teacher Authentication:** Teacher login signs JWT with `teacher` role.
 - `✓` **Student Authentication:** Student login signs JWT with `student` role.
-- `✓` **Privilege Escalation Protection:** Public registration strictly enforces `student` role even if payload attempts to inject `role: 'teacher'`.
+- `✓` **Role Registration Protection:** Teacher registration requires the configured invite code; legacy role input cannot grant permissions.
+- `✓` **Multiple Roles:** Registration and JWTs support both student and teacher roles on one account.
 - `✓` **Access Control:** Student receives `403 Forbidden` when attempting teacher-only routes.
 - `✓` **Teacher CRUD:** Teacher can create, read, update, and delete lessons.
 - `✓` **Quiz Security:** Correct answers are sanitized and stripped from student quiz requests.

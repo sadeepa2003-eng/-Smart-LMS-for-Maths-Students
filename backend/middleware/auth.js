@@ -19,9 +19,16 @@ function authenticateToken(req, res, next) {
   })
 }
 
+function hasRole(user, role) {
+  const roles = Array.isArray(user?.roles) && user.roles.length > 0
+    ? user.roles
+    : [user?.role]
+  return roles.includes(role)
+}
+
 function requireRole(role) {
   return (req, res, next) => {
-    if (!req.user || req.user.role !== role) {
+    if (!hasRole(req.user, role)) {
       return res.status(403).json({
         message: `Forbidden: This action requires the '${role}' role.`
       })
