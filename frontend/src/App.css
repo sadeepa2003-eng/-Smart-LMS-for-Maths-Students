@@ -375,6 +375,11 @@ body {
   flex-wrap: wrap;
 }
 
+.lesson-search-input {
+  flex: 1 1 260px;
+  max-width: 360px;
+}
+
 .filter-btn {
   background: #ffffff;
   border: 1px solid var(--border-color);

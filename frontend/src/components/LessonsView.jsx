@@ -3,10 +3,15 @@ import React, { useEffect, useState } from 'react'
 export default function LessonsView({ initialTopic = 'All' }) {
   const [lessons, setLessons] = useState([])
   const [topicFilter, setTopicFilter] = useState(initialTopic)
+  const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   const API_URL = 'http://localhost:5000/api'
+  const normalizedSearch = searchQuery.trim().toLocaleLowerCase()
+  const filteredLessons = lessons.filter((lesson) =>
+    `${lesson.title} ${lesson.topic}`.toLocaleLowerCase().includes(normalizedSearch)
+  )
 
   useEffect(() => {
     fetchLessons()
@@ -43,6 +48,14 @@ export default function LessonsView({ initialTopic = 'All' }) {
 
       {/* Filter Bar */}
       <div className="filter-bar">
+        <input
+          type="search"
+          className="form-input lesson-search-input"
+          aria-label="Search lessons by title or topic"
+          placeholder="Search lessons by title or topic"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+        />
         <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#475569' }}>Filter by Topic:</span>
         {['All', 'Algebra', 'Geometry', 'Straight Lines'].map((topic) => (
           <button
@@ -63,9 +76,13 @@ export default function LessonsView({ initialTopic = 'All' }) {
         <div className="card" style={{ textAlign: 'center', padding: 40, color: '#64748b' }}>
           No lessons found for this topic filter.
         </div>
+      ) : filteredLessons.length === 0 ? (
+        <div className="card" style={{ textAlign: 'center', padding: 40, color: '#64748b' }}>
+          No lessons match “{searchQuery.trim()}”.
+        </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {lessons.map((lesson) => (
+          {filteredLessons.map((lesson) => (
             <div key={lesson._id} className="card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
                 <div>
