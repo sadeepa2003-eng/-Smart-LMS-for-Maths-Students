@@ -10,6 +10,14 @@ import TeacherQuizManager from './components/TeacherQuizManager'
 import TeacherResultsMonitor from './components/TeacherResultsMonitor'
 import './App.css'
 
+function userHasRole(currentUser, role) {
+  return currentUser?.roles?.includes(role) || currentUser?.role === role
+}
+
+function initialTabForUser(currentUser) {
+  return userHasRole(currentUser, 'student') ? 'dashboard' : 'manage-lessons'
+}
+
 function App() {
   const [token, setToken] = useState(() => localStorage.getItem('maths_lms_token') || null)
   const [user, setUser] = useState(() => {
@@ -21,7 +29,7 @@ function App() {
     const saved = localStorage.getItem('maths_lms_user')
     if (saved) {
       const u = JSON.parse(saved)
-      return u.role === 'teacher' ? 'manage-lessons' : 'dashboard'
+      return initialTabForUser(u)
     }
     return 'dashboard'
   })
@@ -62,7 +70,7 @@ function App() {
     setUser(newUser)
     localStorage.setItem('maths_lms_token', newToken)
     localStorage.setItem('maths_lms_user', JSON.stringify(newUser))
-    setActiveTab(newUser.role === 'teacher' ? 'manage-lessons' : 'dashboard')
+    setActiveTab(initialTabForUser(newUser))
   }
 
   function handleLogout() {
@@ -86,56 +94,44 @@ function App() {
       <main style={{ flex: 1, paddingBottom: 40 }}>
         {!user || !token ? (
           <AuthView onLoginSuccess={handleLoginSuccess} />
-        ) : user.role === 'student' ? (
+        ) : (
           <>
-            {activeTab === 'dashboard' && (
+            {userHasRole(user, 'student') && activeTab === 'dashboard' && (
               <StudentDashboard
                 token={token}
                 setActiveTab={setActiveTab}
                 setSelectedTopic={setSelectedTopic}
               />
             )}
-            {activeTab === 'lessons' && (
+            {userHasRole(user, 'student') && activeTab === 'lessons' && (
               <LessonsView initialTopic={selectedTopic} />
             )}
-            {activeTab === 'quizzes' && (
+            {userHasRole(user, 'student') && activeTab === 'quizzes' && (
               <QuizzesView
                 token={token}
                 initialTopic={selectedTopic}
                 onQuizCompleted={() => {}}
               />
             )}
-            {activeTab === 'progress' && (
+            {userHasRole(user, 'student') && activeTab === 'progress' && (
               <StudentProgress token={token} setActiveTab={setActiveTab} />
             )}
-          </>
-        ) : (
-          <>
-            {activeTab === 'manage-lessons' && (
+            {userHasRole(user, 'teacher') && activeTab === 'manage-lessons' && (
               <TeacherLessonManager token={token} />
             )}
-            {activeTab === 'manage-quizzes' && (
+            {userHasRole(user, 'teacher') && activeTab === 'manage-quizzes' && (
               <TeacherQuizManager token={token} />
             )}
-            {activeTab === 'student-results' && (
+            {userHasRole(user, 'teacher') && activeTab === 'student-results' && (
               <TeacherResultsMonitor token={token} />
             )}
           </>
         )}
       </main>
 
-      <footer
-        style={{
-          borderTop: '1px solid #e2e8f0',
-          padding: '16px 24px',
-          textAlign: 'center',
-          fontSize: '0.85rem',
-          color: '#64748b',
-          background: '#ffffff'
-        }}
-      >
+      <footer className="app-footer">
         <span>
-          Smart Maths LMS • Built with MERN Stack • Rule-Based Revision Recommendations
+          Smart Maths LMS • Rule-Based Revision Recommendations
         </span>
       </footer>
     </div>

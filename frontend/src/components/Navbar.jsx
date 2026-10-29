@@ -7,6 +7,8 @@ export default function Navbar({
   setActiveTab,
   backendStatus
 }) {
+  const roles = user?.roles?.length ? user.roles : user ? [user.role] : []
+
   return (
     <header className="navbar">
       <div className="nav-brand">
@@ -16,7 +18,7 @@ export default function Navbar({
 
       {user && (
         <nav className="nav-center">
-          {user.role === 'student' ? (
+          {roles.includes('student') && (
             <>
               <button
                 className={`nav-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
@@ -43,7 +45,8 @@ export default function Navbar({
                 📈 My Progress
               </button>
             </>
-          ) : (
+          )}
+          {roles.includes('teacher') && (
             <>
               <button
                 className={`nav-btn ${activeTab === 'manage-lessons' ? 'active' : ''}`}
@@ -82,7 +85,9 @@ export default function Navbar({
         {user ? (
           <div className="user-badge">
             <span>{user.name}</span>
-            <span className={`role-pill role-${user.role}`}>{user.role}</span>
+            <span className={`role-pill ${roles.includes('teacher') ? 'role-teacher' : 'role-student'}`}>
+              {roles.join(' + ')}
+            </span>
             <button
               onClick={onLogout}
               className="btn btn-secondary btn-sm"
