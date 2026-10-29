@@ -11,7 +11,7 @@ const attemptRoutes = require('./routes/attempts')
 const app = express()
 const PORT = process.env.PORT || 5000
 
-app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173' }))
+app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5175' }))
 app.use(express.json({ limit: '100kb' }))
 
 // Health endpoint

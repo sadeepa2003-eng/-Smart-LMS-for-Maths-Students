@@ -2,7 +2,7 @@ const express = require('express')
 const router = express.Router()
 const Quiz = require('../models/Quiz')
 const Attempt = require('../models/Attempt')
-const { authenticateToken, requireRole } = require('../middleware/auth')
+const { authenticateToken, requireRole, hasRole } = require('../middleware/auth')
 
 // Helper for rule-based revision recommendations
 function computeRecommendation(percentage, topic) {
@@ -56,7 +56,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
     }
 
     // If teacher, can view answers; if student, exclude correctOptionIndex
-    if (req.user.role === 'teacher') {
+    if (hasRole(req.user, 'teacher')) {
       return res.json(quiz)
     }
 

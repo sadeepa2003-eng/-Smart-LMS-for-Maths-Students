@@ -40,5 +40,6 @@ function requireRole(role) {
 module.exports = {
   authenticateToken,
   requireRole,
+  hasRole,
   JWT_SECRET
 }

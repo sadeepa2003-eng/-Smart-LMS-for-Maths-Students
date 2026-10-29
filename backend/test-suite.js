@@ -55,7 +55,7 @@ async function runTests() {
     assert(studentLoginRes.status === 200 && studentData.user.role === 'student', 'Student login returns token with student role')
     const studentToken = studentData.token
 
-    // Test 4: Public registration enforces student role even if role=teacher submitted
+    // Test 4: Legacy role input cannot grant teacher permissions
     const randomEmail = `student_${Date.now()}@example.com`
     const registerRes = await fetch(`${BASE_URL}/auth/register`, {
       method: 'POST',
@@ -68,9 +68,62 @@ async function runTests() {
       })
     })
     const regData = await registerRes.json()
-    assert(registerRes.status === 201 && regData.user.role === 'student', 'Public registration strictly assigns student role')
+    assert(
+      registerRes.status === 201 &&
+      regData.user.role === 'student' &&
+      regData.user.roles.length === 1 &&
+      regData.user.roles[0] === 'student',
+      'Registration defaults to student and ignores the legacy role field'
+    )
 
-    // Test 5: Role protection - Student cannot create a lesson
+    // Test 5: Teacher registration requires an invite code
+    process.env.TEACHER_INVITE_CODE = 'test-teacher-invite'
+    const invalidTeacherRegister = await fetch(`${BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Test Teacher',
+        email: `teacher_${Date.now()}@example.com`,
+        password: 'Password123!',
+        roles: ['teacher'],
+        teacherInviteCode: 'wrong-code'
+      })
+    })
+    assert(invalidTeacherRegister.status === 403, 'Teacher registration rejects an invalid invite code')
+
+    const multipleRolesRegister = await fetch(`${BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Student Teacher',
+        email: `both_roles_${Date.now()}@example.com`,
+        password: 'Password123!',
+        roles: ['student', 'teacher'],
+        teacherInviteCode: process.env.TEACHER_INVITE_CODE
+      })
+    })
+    assert(multipleRolesRegister.status === 400, 'Registration rejects multiple account types')
+
+    const teacherRegister = await fetch(`${BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Test Teacher',
+        email: `teacher_${Date.now()}@example.com`,
+        password: 'Password123!',
+        roles: ['teacher'],
+        teacherInviteCode: process.env.TEACHER_INVITE_CODE
+      })
+    })
+    const teacherRegisterData = await teacherRegister.json()
+    assert(
+      teacherRegister.status === 201 &&
+      teacherRegisterData.user.roles.length === 1 &&
+      teacherRegisterData.user.roles[0] === 'teacher',
+      'Valid invite code registers a teacher-only account'
+    )
+
+    // Test 6: Role protection - Student cannot create a lesson
     const studentLessonCreate = await fetch(`${BASE_URL}/lessons`, {
       method: 'POST',
       headers: {
@@ -85,7 +138,7 @@ async function runTests() {
     })
     assert(studentLessonCreate.status === 403, 'Student blocked from creating lesson (403 Forbidden)')
 
-    // Test 6: Teacher can create a lesson
+    // Test 7: Teacher can create a lesson
     const teacherLessonCreate = await fetch(`${BASE_URL}/lessons`, {
       method: 'POST',
       headers: {
@@ -107,7 +160,7 @@ async function runTests() {
       headers: { Authorization: `Bearer ${teacherToken}` }
     })
 
-    // Test 7: Student fetching quiz has correct answers stripped
+    // Test 8: Student fetching quiz has correct answers stripped
     const quizzesRes = await fetch(`${BASE_URL}/quizzes`)
     const quizzes = await quizzesRes.json()
     const firstQuiz = quizzes[0]
@@ -119,7 +172,7 @@ async function runTests() {
     const hasExposedAnswer = studentQuizData.questions.some((q) => q.correctOptionIndex !== undefined)
     assert(!hasExposedAnswer, 'Student cannot view correctOptionIndex before submission')
 
-    // Test 8: Quiz submission and rule-based scoring (all wrong answers -> <50% -> revise)
+    // Test 9: Quiz submission and rule-based scoring (all wrong answers -> <50% -> revise)
     const failSubmitRes = await fetch(`${BASE_URL}/quizzes/${firstQuiz._id}/submit`, {
       method: 'POST',
       headers: {
@@ -138,7 +191,7 @@ async function runTests() {
       'Score < 50% correctly yields "revise" rule recommendation'
     )
 
-    // Test 9: Student attempts history contains submitted attempt
+    // Test 10: Student attempts history contains submitted attempt
     const historyRes = await fetch(`${BASE_URL}/attempts/my-history`, {
       headers: { Authorization: `Bearer ${studentToken}` }
     })

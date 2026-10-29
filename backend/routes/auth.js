@@ -6,14 +6,31 @@ const User = require('../models/User')
 const { authenticateToken, JWT_SECRET } = require('../middleware/auth')
 
 // POST /api/auth/register
-// Rule: Public registration always creates a student account
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password } = req.body
+    const { name, email, password, teacherInviteCode } = req.body
 
-    // Validation
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Name, email, and password are required.' })
+    }
+
+    const roles = req.body.roles === undefined ? ['student'] : req.body.roles
+    if (
+      !Array.isArray(roles) ||
+      roles.length !== 1 ||
+      roles.some((role) => !['student', 'teacher'].includes(role)) ||
+      new Set(roles).size !== roles.length
+    ) {
+      return res.status(400).json({ message: 'Select exactly one valid account type.' })
+    }
+
+    if (roles.includes('teacher')) {
+      if (!process.env.TEACHER_INVITE_CODE) {
+        return res.status(503).json({ message: 'Teacher registration is not configured. Contact the LMS administrator.' })
+      }
+      if (typeof teacherInviteCode !== 'string' || teacherInviteCode !== process.env.TEACHER_INVITE_CODE) {
+        return res.status(403).json({ message: 'A valid teacher invite code is required.' })
+      }
     }
 
     if (password.length < 6) {
@@ -25,35 +42,34 @@ router.post('/register', async (req, res) => {
       return res.status(409).json({ message: 'An account with this email already exists.' })
     }
 
-    // Hash password
     const salt = await bcrypt.genSalt(10)
     const passwordHash = await bcrypt.hash(password, salt)
 
-    // Strictly enforce role: student for public registration
     const user = new User({
       name: name.trim(),
       email: email.toLowerCase().trim(),
       passwordHash,
-      role: 'student'
+      role: roles.includes('teacher') ? 'teacher' : 'student',
+      roles
     })
 
     await user.save()
 
-    // Sign JWT
     const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role, name: user.name },
+      { id: user._id, email: user.email, role: user.role, roles, name: user.name },
       JWT_SECRET,
       { expiresIn: '7d' }
     )
 
     res.status(201).json({
-      message: 'Student account registered successfully.',
+      message: 'Account registered successfully.',
       token,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        roles
       }
     })
   } catch (error) {
@@ -81,8 +97,9 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password.' })
     }
 
+    const roles = Array.isArray(user.roles) && user.roles.length > 0 ? user.roles : [user.role]
     const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role, name: user.name },
+      { id: user._id, email: user.email, role: user.role, roles, name: user.name },
       JWT_SECRET,
       { expiresIn: '7d' }
     )
@@ -94,7 +111,8 @@ router.post('/login', async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        roles
       }
     })
   } catch (error) {
@@ -110,7 +128,8 @@ router.get('/me', authenticateToken, async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found.' })
     }
-    res.json({ user })
+    const roles = Array.isArray(user.roles) && user.roles.length > 0 ? user.roles : [user.role]
+    res.json({ user: { ...user.toObject(), roles } })
   } catch (error) {
     console.error('Get profile error:', error)
     res.status(500).json({ message: 'Server error fetching user profile.' })
