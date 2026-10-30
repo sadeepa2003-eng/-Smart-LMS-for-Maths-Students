@@ -53,6 +53,28 @@ export default function TeacherResultsMonitor({ token }) {
     ? Math.round(filteredAttempts.reduce((sum, attempt) => sum + attempt.percentage, 0) / filteredAttempts.length)
     : null
   const needsRevisionCount = filteredAttempts.filter((attempt) => attempt.recommendationLevel === 'revise').length
+  const topicSummaries = ['Algebra', 'Geometry', 'Straight Lines'].map((topic) => {
+    const topicAttempts = attempts.filter((attempt) => {
+      const attemptDate = new Date(attempt.submittedAt).toISOString().slice(0, 10)
+      return (
+        attempt.topic === topic &&
+        (statusFilter === 'All' || attempt.recommendationLevel === statusFilter) &&
+        (!startDate || attemptDate >= startDate) &&
+        (!endDate || attemptDate <= endDate) &&
+        [
+          attempt.studentId?.name || '',
+          attempt.studentId?.email || '',
+          attempt.quizTitle,
+          attempt.topic
+        ].join(' ').toLocaleLowerCase().includes(normalizedSearch)
+      )
+    })
+    const average = topicAttempts.length
+      ? Math.round(topicAttempts.reduce((sum, attempt) => sum + attempt.percentage, 0) / topicAttempts.length)
+      : null
+
+    return { topic, count: topicAttempts.length, average }
+  })
 
   useEffect(() => {
     fetchAllAttempts()
@@ -113,6 +135,14 @@ export default function TeacherResultsMonitor({ token }) {
     setEndDate('')
   }
 
+  function showTopicResults(topic) {
+    setTopicFilter(topic)
+    document.getElementById('results-filters')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    })
+  }
+
   function getBadgeClass(level) {
     if (level === 'revise') return 'badge-revise'
     if (level === 'practice') return 'badge-practice'
@@ -139,7 +169,7 @@ export default function TeacherResultsMonitor({ token }) {
         </div>
       ) : (
         <>
-          <div className="filter-bar">
+          <div className="filter-bar" id="results-filters">
             <input
               type="search"
               className="form-input quiz-search-input"
@@ -230,6 +260,56 @@ export default function TeacherResultsMonitor({ token }) {
             >
               Export CSV
             </button>
+          </div>
+          <h3 style={{ margin: '0 0 12px', fontSize: '1.1rem', color: '#1e293b' }}>
+            Performance by Topic
+          </h3>
+          <div className="grid-3">
+            {topicSummaries.map(({ topic, count, average }) => (
+              <div className="card" key={topic}>
+                <h4 style={{ margin: '0 0 8px', color: '#1e293b' }}>{topic}</h4>
+                <p style={{ margin: '0 0 12px', color: '#64748b', fontSize: '0.9rem' }}>
+                  {count} {count === 1 ? 'attempt' : 'attempts'} matching other filters
+                </p>
+                {average === null ? (
+                  <p style={{ margin: 0, color: '#64748b' }}>No matching attempts</p>
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <span style={{ color: '#64748b', fontSize: '0.9rem' }}>Average score</span>
+                      <strong>{average}%</strong>
+                    </div>
+                    <div
+                      role="progressbar"
+                      aria-label={`${topic} average score`}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={average}
+                      style={{ height: 8, overflow: 'hidden', borderRadius: 999, background: '#e2e8f0' }}
+                    >
+                      <div
+                        style={{
+                          width: `${average}%`,
+                          height: '100%',
+                          borderRadius: 999,
+                          background: '#2563eb'
+                        }}
+                      />
+                    </div>
+                  </>
+                )}
+                <button
+                  type="button"
+                  className={`btn btn-sm ${topicFilter === topic ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ marginTop: 12 }}
+                  aria-pressed={topicFilter === topic}
+                  onClick={() => showTopicResults(topic)}
+                  disabled={count === 0}
+                >
+                  View results
+                </button>
+              </div>
+            ))}
           </div>
           <div className="grid-3">
             <div className="card">
