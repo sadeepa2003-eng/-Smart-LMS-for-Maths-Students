@@ -171,9 +171,19 @@ export default function StudentDashboard({ token, setActiveTab, setSelectedTopic
       </div>
 
       {/* Recent Quiz Attempts */}
-      <h3 style={{ marginBottom: 12, fontSize: '1.2rem', color: '#1e293b' }}>
-        🕒 Recent Quiz Attempts
-      </h3>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
+        <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#1e293b' }}>
+          🕒 Recent Quiz Attempts
+        </h3>
+        {recentAttempts.length > 0 && (
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => setActiveTab('progress')}
+          >
+            View All Progress
+          </button>
+        )}
+      </div>
 
       {recentAttempts.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: 32, color: '#64748b' }}>
