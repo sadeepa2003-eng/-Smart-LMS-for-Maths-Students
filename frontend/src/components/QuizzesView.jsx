@@ -15,9 +15,13 @@ export default function QuizzesView({ token, initialTopic = 'All', onQuizComplet
 
   const API_URL = 'http://localhost:5000/api'
   const normalizedSearch = searchQuery.trim().toLocaleLowerCase()
-  const filteredQuizzes = quizzes.filter((quiz) =>
-    `${quiz.title} ${quiz.topic} ${quiz.description || ''}`.toLocaleLowerCase().includes(normalizedSearch)
-  )
+  const filteredQuizzes = quizzes.filter((quiz) => {
+    const quizDetails = `${quiz.title} ${quiz.topic} ${quiz.description || ''}`.toLocaleLowerCase()
+    const questionMatches = quiz.questions?.some((question) =>
+      (question.questionText || '').toLocaleLowerCase().includes(normalizedSearch)
+    )
+    return quizDetails.includes(normalizedSearch) || questionMatches
+  })
 
   useEffect(() => {
     fetchQuizzes()
@@ -316,8 +320,8 @@ export default function QuizzesView({ token, initialTopic = 'All', onQuizComplet
         <input
           type="search"
           className="form-input quiz-search-input"
-          aria-label="Search quizzes by title, topic, or description"
-          placeholder="Search quizzes by title, topic, or description"
+          aria-label="Search quizzes by title, topic, description, or question"
+          placeholder="Search quizzes by title, topic, description, or question"
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
         />
