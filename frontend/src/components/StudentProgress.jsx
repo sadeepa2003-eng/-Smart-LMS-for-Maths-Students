@@ -122,12 +122,23 @@ export default function StudentProgress({ token, setActiveTab }) {
     ? attempts.reduce((highest, attempt) => Math.max(highest, attempt.percentage), 0)
     : 0
   const topicSummaries = ['Algebra', 'Geometry', 'Straight Lines'].map((topic) => {
-    const topicAttempts = attempts.filter((attempt) => attempt.topic === topic)
+    const topicAttempts = attempts
+      .filter((attempt) => attempt.topic === topic)
+      .sort((first, second) => new Date(second.submittedAt) - new Date(first.submittedAt))
     const average = topicAttempts.length
       ? Math.round(topicAttempts.reduce((sum, attempt) => sum + attempt.percentage, 0) / topicAttempts.length)
       : null
 
-    return { topic, count: topicAttempts.length, average }
+    const latestPercentage = topicAttempts[0]?.percentage
+    const previousPercentage = topicAttempts[1]?.percentage
+
+    return {
+      topic,
+      count: topicAttempts.length,
+      average,
+      latestPercentage,
+      change: previousPercentage === undefined ? null : latestPercentage - previousPercentage
+    }
   })
 
   return (
@@ -180,7 +191,7 @@ export default function StudentProgress({ token, setActiveTab }) {
             Performance by Topic
           </h3>
           <div className="grid-3">
-            {topicSummaries.map(({ topic, count, average }) => (
+            {topicSummaries.map(({ topic, count, average, latestPercentage, change }) => (
               <div className="card" key={topic}>
                 <h4 style={{ margin: '0 0 8px', color: '#1e293b' }}>{topic}</h4>
                 <p style={{ margin: '0 0 12px', color: '#64748b', fontSize: '0.9rem' }}>
@@ -194,6 +205,19 @@ export default function StudentProgress({ token, setActiveTab }) {
                       <span style={{ color: '#64748b', fontSize: '0.9rem' }}>Average score</span>
                       <strong>{average}%</strong>
                     </div>
+                    <p style={{ margin: '0 0 12px', color: '#64748b', fontSize: '0.9rem' }}>
+                      Latest: <strong style={{ color: '#1e293b' }}>{latestPercentage}%</strong>
+                      {change === null ? (
+                        <span> | Complete another quiz to see your trend</span>
+                      ) : (
+                        <span style={{ color: change > 0 ? '#15803d' : change < 0 ? '#b91c1c' : '#64748b' }}>
+                          {' | '}
+                          {change === 0
+                            ? 'No change since previous attempt'
+                            : `${change > 0 ? '+' : ''}${change} percentage points since previous attempt`}
+                        </span>
+                      )}
+                    </p>
                     <div
                       role="progressbar"
                       aria-label={`${topic} average score`}
