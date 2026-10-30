@@ -16,7 +16,7 @@ export default function QuizzesView({ token, initialTopic = 'All', onQuizComplet
   const API_URL = 'http://localhost:5000/api'
   const normalizedSearch = searchQuery.trim().toLocaleLowerCase()
   const filteredQuizzes = quizzes.filter((quiz) =>
-    `${quiz.title} ${quiz.topic}`.toLocaleLowerCase().includes(normalizedSearch)
+    `${quiz.title} ${quiz.topic} ${quiz.description || ''}`.toLocaleLowerCase().includes(normalizedSearch)
   )
 
   useEffect(() => {
@@ -316,8 +316,8 @@ export default function QuizzesView({ token, initialTopic = 'All', onQuizComplet
         <input
           type="search"
           className="form-input quiz-search-input"
-          aria-label="Search quizzes by title or topic"
-          placeholder="Search quizzes by title or topic"
+          aria-label="Search quizzes by title, topic, or description"
+          placeholder="Search quizzes by title, topic, or description"
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
         />
