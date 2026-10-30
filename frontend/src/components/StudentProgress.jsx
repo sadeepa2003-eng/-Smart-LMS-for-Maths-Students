@@ -5,6 +5,7 @@ export default function StudentProgress({ token, setActiveTab }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [topicFilter, setTopicFilter] = useState('All')
   const [statusFilter, setStatusFilter] = useState('All')
+  const [sortOrder, setSortOrder] = useState('newest')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -18,6 +19,18 @@ export default function StudentProgress({ token, setActiveTab }) {
       .toLocaleLowerCase()
       .includes(normalizedSearch)
   )
+  const sortedAttempts = [...filteredAttempts].sort((first, second) => {
+    if (sortOrder === 'oldest') {
+      return new Date(first.submittedAt) - new Date(second.submittedAt)
+    }
+    if (sortOrder === 'highest-score') {
+      return second.percentage - first.percentage
+    }
+    if (sortOrder === 'lowest-score') {
+      return first.percentage - second.percentage
+    }
+    return new Date(second.submittedAt) - new Date(first.submittedAt)
+  })
 
   function clearFilters() {
     setSearchQuery('')
@@ -33,7 +46,7 @@ export default function StudentProgress({ token, setActiveTab }) {
     }
     const rows = [
       ['Date & Time', 'Quiz', 'Topic', 'Score', 'Total Questions', 'Percentage', 'Status', 'Recommendation'],
-      ...filteredAttempts.map((attempt) => [
+      ...sortedAttempts.map((attempt) => [
         new Date(attempt.submittedAt).toLocaleString(),
         attempt.quizTitle,
         attempt.topic,
@@ -116,6 +129,20 @@ export default function StudentProgress({ token, setActiveTab }) {
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
             />
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600, fontSize: '0.9rem', color: '#475569' }}>
+              Sort by:
+              <select
+                className="form-input"
+                aria-label="Sort attempt history"
+                value={sortOrder}
+                onChange={(event) => setSortOrder(event.target.value)}
+              >
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="highest-score">Highest score</option>
+                <option value="lowest-score">Lowest score</option>
+              </select>
+            </label>
             <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#475569' }}>Filter by Topic:</span>
             {['All', 'Algebra', 'Geometry', 'Straight Lines'].map((topic) => (
               <button
@@ -193,7 +220,7 @@ export default function StudentProgress({ token, setActiveTab }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredAttempts.map((attempt) => (
+                  {sortedAttempts.map((attempt) => (
                     <tr key={attempt._id}>
                       <td style={{ color: '#64748b', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
                         {new Date(attempt.submittedAt).toLocaleDateString()} {new Date(attempt.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
