@@ -4,6 +4,7 @@ export default function StudentProgress({ token, setActiveTab }) {
   const [attempts, setAttempts] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
   const [topicFilter, setTopicFilter] = useState('All')
+  const [statusFilter, setStatusFilter] = useState('All')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -11,6 +12,7 @@ export default function StudentProgress({ token, setActiveTab }) {
   const normalizedSearch = searchQuery.trim().toLocaleLowerCase()
   const filteredAttempts = attempts.filter((attempt) =>
     (topicFilter === 'All' || attempt.topic === topicFilter) &&
+    (statusFilter === 'All' || attempt.recommendationLevel === statusFilter) &&
     `${attempt.quizTitle} ${attempt.topic} ${attempt.recommendation}`
       .toLocaleLowerCase()
       .includes(normalizedSearch)
@@ -89,6 +91,23 @@ export default function StudentProgress({ token, setActiveTab }) {
                 onClick={() => setTopicFilter(topic)}
               >
                 {topic}
+              </button>
+            ))}
+            <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#475569' }}>Filter by Status:</span>
+            {[
+              { value: 'All', label: 'All' },
+              { value: 'revise', label: 'Revise' },
+              { value: 'practice', label: 'Practice' },
+              { value: 'advance', label: 'Mastered' }
+            ].map((status) => (
+              <button
+                key={status.value}
+                type="button"
+                className={`filter-btn ${statusFilter === status.value ? 'active' : ''}`}
+                aria-pressed={statusFilter === status.value}
+                onClick={() => setStatusFilter(status.value)}
+              >
+                {status.label}
               </button>
             ))}
           </div>
