@@ -9,9 +9,15 @@ export default function LessonsView({ initialTopic = 'All' }) {
 
   const API_URL = 'http://localhost:5000/api'
   const normalizedSearch = searchQuery.trim().toLocaleLowerCase()
-  const filteredLessons = lessons.filter((lesson) =>
-    `${lesson.title} ${lesson.topic} ${lesson.content}`.toLocaleLowerCase().includes(normalizedSearch)
-  )
+  const filteredLessons = lessons.filter((lesson) => {
+    const searchableText = [
+      lesson.title,
+      lesson.topic,
+      lesson.content,
+      lesson.createdBy?.name || ''
+    ].join(' ').toLocaleLowerCase()
+    return searchableText.includes(normalizedSearch)
+  })
 
   useEffect(() => {
     fetchLessons()
@@ -51,8 +57,8 @@ export default function LessonsView({ initialTopic = 'All' }) {
         <input
           type="search"
           className="form-input lesson-search-input"
-          aria-label="Search lessons by title, topic, or content"
-          placeholder="Search lessons by title, topic, or content"
+          aria-label="Search lessons by title, topic, content, or teacher"
+          placeholder="Search lessons by title, topic, content, or teacher"
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
         />
