@@ -113,6 +113,14 @@ export default function StudentProgress({ token, setActiveTab }) {
   const highestPercentage = attempts.length
     ? attempts.reduce((highest, attempt) => Math.max(highest, attempt.percentage), 0)
     : 0
+  const topicSummaries = ['Algebra', 'Geometry', 'Straight Lines'].map((topic) => {
+    const topicAttempts = attempts.filter((attempt) => attempt.topic === topic)
+    const average = topicAttempts.length
+      ? Math.round(topicAttempts.reduce((sum, attempt) => sum + attempt.percentage, 0) / topicAttempts.length)
+      : null
+
+    return { topic, count: topicAttempts.length, average }
+  })
 
   return (
     <div className="container">
@@ -159,6 +167,46 @@ export default function StudentProgress({ token, setActiveTab }) {
                 {highestPercentage}%
               </p>
             </div>
+          </div>
+          <h3 style={{ margin: '0 0 12px', fontSize: '1.1rem', color: '#1e293b' }}>
+            Performance by Topic
+          </h3>
+          <div className="grid-3">
+            {topicSummaries.map(({ topic, count, average }) => (
+              <div className="card" key={topic}>
+                <h4 style={{ margin: '0 0 8px', color: '#1e293b' }}>{topic}</h4>
+                <p style={{ margin: '0 0 12px', color: '#64748b', fontSize: '0.9rem' }}>
+                  {count} {count === 1 ? 'attempt' : 'attempts'}
+                </p>
+                {average === null ? (
+                  <p style={{ margin: 0, color: '#64748b' }}>No attempts yet</p>
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <span style={{ color: '#64748b', fontSize: '0.9rem' }}>Average score</span>
+                      <strong>{average}%</strong>
+                    </div>
+                    <div
+                      role="progressbar"
+                      aria-label={`${topic} average score`}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={average}
+                      style={{ height: 8, overflow: 'hidden', borderRadius: 999, background: '#e2e8f0' }}
+                    >
+                      <div
+                        style={{
+                          width: `${average}%`,
+                          height: '100%',
+                          borderRadius: 999,
+                          background: '#2563eb'
+                        }}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
           </div>
           <div className="filter-bar">
             <input
