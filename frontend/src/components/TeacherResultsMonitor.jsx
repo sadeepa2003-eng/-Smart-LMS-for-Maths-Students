@@ -43,6 +43,16 @@ export default function TeacherResultsMonitor({ token }) {
     }
     return new Date(second.submittedAt) - new Date(first.submittedAt)
   })
+  const studentKeys = new Set(filteredAttempts.map((attempt) =>
+    attempt.studentId?._id ||
+    attempt.studentId?.email ||
+    attempt.studentId?.name ||
+    attempt._id
+  ))
+  const averagePercentage = filteredAttempts.length
+    ? Math.round(filteredAttempts.reduce((sum, attempt) => sum + attempt.percentage, 0) / filteredAttempts.length)
+    : null
+  const needsRevisionCount = filteredAttempts.filter((attempt) => attempt.recommendationLevel === 'revise').length
 
   useEffect(() => {
     fetchAllAttempts()
@@ -220,6 +230,32 @@ export default function TeacherResultsMonitor({ token }) {
             >
               Export CSV
             </button>
+          </div>
+          <div className="grid-3">
+            <div className="card">
+              <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>Matching attempts</p>
+              <p style={{ margin: '8px 0 0', color: '#1e293b', fontSize: '1.8rem', fontWeight: 700 }}>
+                {filteredAttempts.length}
+              </p>
+            </div>
+            <div className="card">
+              <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>Students represented</p>
+              <p style={{ margin: '8px 0 0', color: '#1e293b', fontSize: '1.8rem', fontWeight: 700 }}>
+                {studentKeys.size}
+              </p>
+            </div>
+            <div className="card">
+              <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>Average score</p>
+              <p style={{ margin: '8px 0 0', color: '#1e293b', fontSize: '1.8rem', fontWeight: 700 }}>
+                {averagePercentage === null ? '—' : `${averagePercentage}%`}
+              </p>
+            </div>
+            <div className="card">
+              <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>Needs revision</p>
+              <p style={{ margin: '8px 0 0', color: '#1e293b', fontSize: '1.8rem', fontWeight: 700 }}>
+                {needsRevisionCount}
+              </p>
+            </div>
           </div>
           {filteredAttempts.length === 0 ? (
             <div className="card" style={{ textAlign: 'center', padding: 40, color: '#64748b' }}>
