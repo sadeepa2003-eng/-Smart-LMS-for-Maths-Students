@@ -10,6 +10,7 @@ export default function StudentProgress({ token, setActiveTab }) {
 
   const API_URL = 'http://localhost:5000/api'
   const normalizedSearch = searchQuery.trim().toLocaleLowerCase()
+  const hasActiveFilters = normalizedSearch !== '' || topicFilter !== 'All' || statusFilter !== 'All'
   const filteredAttempts = attempts.filter((attempt) =>
     (topicFilter === 'All' || attempt.topic === topicFilter) &&
     (statusFilter === 'All' || attempt.recommendationLevel === statusFilter) &&
@@ -17,6 +18,12 @@ export default function StudentProgress({ token, setActiveTab }) {
       .toLocaleLowerCase()
       .includes(normalizedSearch)
   )
+
+  function clearFilters() {
+    setSearchQuery('')
+    setTopicFilter('All')
+    setStatusFilter('All')
+  }
 
   useEffect(() => {
     fetchHistory()
@@ -110,13 +117,34 @@ export default function StudentProgress({ token, setActiveTab }) {
                 {status.label}
               </button>
             ))}
+            {hasActiveFilters && (
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={clearFilters}
+              >
+                Clear filters
+              </button>
+            )}
           </div>
           {filteredAttempts.length === 0 ? (
             <div className="card" style={{ textAlign: 'center', padding: 40, color: '#64748b' }}>
-              No attempts match the selected topic and search.
+              <p>No attempts match the selected search and filters.</p>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={clearFilters}
+              >
+                Clear filters
+              </button>
             </div>
           ) : (
             <div className="table-container">
+              {hasActiveFilters && (
+                <p style={{ margin: 12, color: '#64748b', fontSize: '0.9rem' }}>
+                  Showing {filteredAttempts.length} of {attempts.length} attempts
+                </p>
+              )}
               <table className="data-table">
                 <thead>
                   <tr>
