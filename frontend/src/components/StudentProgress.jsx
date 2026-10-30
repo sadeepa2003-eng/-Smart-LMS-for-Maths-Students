@@ -25,6 +25,34 @@ export default function StudentProgress({ token, setActiveTab }) {
     setStatusFilter('All')
   }
 
+  function exportFilteredAttempts() {
+    const csvCell = (value) => {
+      const text = String(value ?? '')
+      const safeText = /^[\t\r ]*[=+\-@]/.test(text) ? `'${text}` : text
+      return `"${safeText.replaceAll('"', '""')}"`
+    }
+    const rows = [
+      ['Date & Time', 'Quiz', 'Topic', 'Score', 'Total Questions', 'Percentage', 'Status', 'Recommendation'],
+      ...filteredAttempts.map((attempt) => [
+        new Date(attempt.submittedAt).toLocaleString(),
+        attempt.quizTitle,
+        attempt.topic,
+        attempt.score,
+        attempt.total,
+        `${attempt.percentage}%`,
+        attempt.recommendationLevel,
+        attempt.recommendation
+      ])
+    ]
+    const csv = rows.map((row) => row.map(csvCell).join(',')).join('\r\n')
+    const downloadUrl = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+    const downloadLink = document.createElement('a')
+    downloadLink.href = downloadUrl
+    downloadLink.download = 'maths-lms-progress.csv'
+    downloadLink.click()
+    setTimeout(() => URL.revokeObjectURL(downloadUrl), 0)
+  }
+
   useEffect(() => {
     fetchHistory()
   }, [])
@@ -126,6 +154,14 @@ export default function StudentProgress({ token, setActiveTab }) {
                 Clear filters
               </button>
             )}
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={exportFilteredAttempts}
+              disabled={filteredAttempts.length === 0}
+            >
+              Export CSV
+            </button>
           </div>
           {filteredAttempts.length === 0 ? (
             <div className="card" style={{ textAlign: 'center', padding: 40, color: '#64748b' }}>
