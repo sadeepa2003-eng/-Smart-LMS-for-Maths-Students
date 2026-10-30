@@ -4,6 +4,7 @@ export default function TeacherResultsMonitor({ token }) {
   const [attempts, setAttempts] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
   const [topicFilter, setTopicFilter] = useState('All')
+  const [statusFilter, setStatusFilter] = useState('All')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -11,6 +12,7 @@ export default function TeacherResultsMonitor({ token }) {
   const normalizedSearch = searchQuery.trim().toLocaleLowerCase()
   const filteredAttempts = attempts.filter((attempt) =>
     (topicFilter === 'All' || attempt.topic === topicFilter) &&
+    (statusFilter === 'All' || attempt.recommendationLevel === statusFilter) &&
     [
       attempt.studentId?.name || '',
       attempt.studentId?.email || '',
@@ -117,6 +119,23 @@ export default function TeacherResultsMonitor({ token }) {
                 {topic}
               </button>
             ))}
+            <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#475569' }}>Filter by Status:</span>
+            {[
+              { value: 'All', label: 'All' },
+              { value: 'revise', label: 'Revise' },
+              { value: 'practice', label: 'Practice' },
+              { value: 'advance', label: 'Mastered' }
+            ].map((status) => (
+              <button
+                key={status.value}
+                type="button"
+                className={`filter-btn ${statusFilter === status.value ? 'active' : ''}`}
+                aria-pressed={statusFilter === status.value}
+                onClick={() => setStatusFilter(status.value)}
+              >
+                {status.label}
+              </button>
+            ))}
             <button
               type="button"
               className="btn btn-secondary btn-sm"
@@ -128,7 +147,7 @@ export default function TeacherResultsMonitor({ token }) {
           </div>
           {filteredAttempts.length === 0 ? (
             <div className="card" style={{ textAlign: 'center', padding: 40, color: '#64748b' }}>
-              No results match the selected topic and search.
+              No results match the selected search, topic, and status.
             </div>
           ) : (
             <div className="table-container">
