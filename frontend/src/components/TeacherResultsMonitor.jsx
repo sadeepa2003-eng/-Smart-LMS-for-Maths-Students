@@ -5,6 +5,7 @@ export default function TeacherResultsMonitor({ token }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [topicFilter, setTopicFilter] = useState('All')
   const [statusFilter, setStatusFilter] = useState('All')
+  const [sortOrder, setSortOrder] = useState('newest')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [loading, setLoading] = useState(true)
@@ -30,6 +31,18 @@ export default function TeacherResultsMonitor({ token }) {
           ].join(' ').toLocaleLowerCase().includes(normalizedSearch)
         )
       })
+  const sortedAttempts = [...filteredAttempts].sort((first, second) => {
+    if (sortOrder === 'oldest') {
+      return new Date(first.submittedAt) - new Date(second.submittedAt)
+    }
+    if (sortOrder === 'highest-score') {
+      return second.percentage - first.percentage
+    }
+    if (sortOrder === 'lowest-score') {
+      return first.percentage - second.percentage
+    }
+    return new Date(second.submittedAt) - new Date(first.submittedAt)
+  })
 
   useEffect(() => {
     fetchAllAttempts()
@@ -60,7 +73,7 @@ export default function TeacherResultsMonitor({ token }) {
     }
     const rows = [
       ['Student', 'Email', 'Quiz', 'Topic', 'Score', 'Total Questions', 'Percentage', 'Status', 'Recommendation', 'Submitted At'],
-      ...filteredAttempts.map((attempt) => [
+      ...sortedAttempts.map((attempt) => [
         attempt.studentId?.name || 'Anonymous Student',
         attempt.studentId?.email || 'N/A',
         attempt.quizTitle,
@@ -125,6 +138,20 @@ export default function TeacherResultsMonitor({ token }) {
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
             />
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600, fontSize: '0.9rem', color: '#475569' }}>
+              Sort by:
+              <select
+                className="form-input"
+                aria-label="Sort teacher results"
+                value={sortOrder}
+                onChange={(event) => setSortOrder(event.target.value)}
+              >
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="highest-score">Highest score</option>
+                <option value="lowest-score">Lowest score</option>
+              </select>
+            </label>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600, fontSize: '0.9rem', color: '#475569' }}>
               From:
               <input
@@ -215,7 +242,7 @@ export default function TeacherResultsMonitor({ token }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredAttempts.map((attempt) => (
+                  {sortedAttempts.map((attempt) => (
                     <tr key={attempt._id}>
                       <td>
                         <div style={{ fontWeight: 600 }}>{attempt.studentId?.name || 'Anonymous Student'}</div>
