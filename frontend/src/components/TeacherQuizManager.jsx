@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 
 export default function TeacherQuizManager({ token }) {
   const [quizzes, setQuizzes] = useState([])
+  const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -22,6 +23,16 @@ export default function TeacherQuizManager({ token }) {
   const [saving, setSaving] = useState(false)
 
   const API_URL = 'http://localhost:5000/api'
+  const normalizedSearch = searchQuery.trim().toLocaleLowerCase()
+  const filteredQuizzes = quizzes.filter((quiz) => {
+    const searchableText = [
+      quiz.title,
+      quiz.topic,
+      quiz.description || '',
+      ...(quiz.questions || []).map((question) => question.questionText || '')
+    ].join(' ').toLocaleLowerCase()
+    return searchableText.includes(normalizedSearch)
+  })
 
   useEffect(() => {
     fetchQuizzes()
@@ -353,15 +364,31 @@ export default function TeacherQuizManager({ token }) {
       )}
 
       {/* Quizzes List */}
+      {!loading && quizzes.length > 0 && (
+        <div className="filter-bar">
+          <input
+            type="search"
+            className="form-input quiz-search-input"
+            aria-label="Search managed quizzes by title, topic, description, or question"
+            placeholder="Search quizzes by title, topic, description, or question"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+          />
+        </div>
+      )}
       {loading ? (
         <p>Loading quizzes...</p>
       ) : quizzes.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: 40, color: '#64748b' }}>
           No quizzes found. Click "Create New Quiz" above to publish one.
         </div>
+      ) : filteredQuizzes.length === 0 ? (
+        <div className="card" style={{ textAlign: 'center', padding: 40, color: '#64748b' }}>
+          No quizzes match “{searchQuery.trim()}”.
+        </div>
       ) : (
         <div className="grid-3">
-          {quizzes.map((quiz) => (
+          {filteredQuizzes.map((quiz) => (
             <div key={quiz._id} className="card" style={{ display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                 <span className="badge badge-topic">{quiz.topic}</span>
