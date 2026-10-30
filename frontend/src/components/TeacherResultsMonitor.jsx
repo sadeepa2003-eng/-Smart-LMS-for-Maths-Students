@@ -5,21 +5,31 @@ export default function TeacherResultsMonitor({ token }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [topicFilter, setTopicFilter] = useState('All')
   const [statusFilter, setStatusFilter] = useState('All')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   const API_URL = 'http://localhost:5000/api'
   const normalizedSearch = searchQuery.trim().toLocaleLowerCase()
-  const filteredAttempts = attempts.filter((attempt) =>
-    (topicFilter === 'All' || attempt.topic === topicFilter) &&
-    (statusFilter === 'All' || attempt.recommendationLevel === statusFilter) &&
-    [
-      attempt.studentId?.name || '',
-      attempt.studentId?.email || '',
-      attempt.quizTitle,
-      attempt.topic
-    ].join(' ').toLocaleLowerCase().includes(normalizedSearch)
-  )
+  const hasInvalidDateRange = startDate !== '' && endDate !== '' && startDate > endDate
+  const filteredAttempts = hasInvalidDateRange
+    ? []
+    : attempts.filter((attempt) => {
+        const attemptDate = new Date(attempt.submittedAt).toISOString().slice(0, 10)
+        return (
+          (topicFilter === 'All' || attempt.topic === topicFilter) &&
+          (statusFilter === 'All' || attempt.recommendationLevel === statusFilter) &&
+          (!startDate || attemptDate >= startDate) &&
+          (!endDate || attemptDate <= endDate) &&
+          [
+            attempt.studentId?.name || '',
+            attempt.studentId?.email || '',
+            attempt.quizTitle,
+            attempt.topic
+          ].join(' ').toLocaleLowerCase().includes(normalizedSearch)
+        )
+      })
 
   useEffect(() => {
     fetchAllAttempts()
@@ -72,6 +82,14 @@ export default function TeacherResultsMonitor({ token }) {
     setTimeout(() => URL.revokeObjectURL(downloadUrl), 0)
   }
 
+  function clearFilters() {
+    setSearchQuery('')
+    setTopicFilter('All')
+    setStatusFilter('All')
+    setStartDate('')
+    setEndDate('')
+  }
+
   function getBadgeClass(level) {
     if (level === 'revise') return 'badge-revise'
     if (level === 'practice') return 'badge-practice'
@@ -107,6 +125,28 @@ export default function TeacherResultsMonitor({ token }) {
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
             />
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600, fontSize: '0.9rem', color: '#475569' }}>
+              From:
+              <input
+                type="date"
+                className="form-input"
+                aria-label="Filter results from date"
+                max={endDate || undefined}
+                value={startDate}
+                onChange={(event) => setStartDate(event.target.value)}
+              />
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600, fontSize: '0.9rem', color: '#475569' }}>
+              To:
+              <input
+                type="date"
+                className="form-input"
+                aria-label="Filter results through date"
+                min={startDate || undefined}
+                value={endDate}
+                onChange={(event) => setEndDate(event.target.value)}
+              />
+            </label>
             <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#475569' }}>Filter by Topic:</span>
             {['All', 'Algebra', 'Geometry', 'Straight Lines'].map((topic) => (
               <button
@@ -136,6 +176,15 @@ export default function TeacherResultsMonitor({ token }) {
                 {status.label}
               </button>
             ))}
+            {(searchQuery !== '' || topicFilter !== 'All' || statusFilter !== 'All' || startDate !== '' || endDate !== '') && (
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={clearFilters}
+              >
+                Clear filters
+              </button>
+            )}
             <button
               type="button"
               className="btn btn-secondary btn-sm"
@@ -147,7 +196,9 @@ export default function TeacherResultsMonitor({ token }) {
           </div>
           {filteredAttempts.length === 0 ? (
             <div className="card" style={{ textAlign: 'center', padding: 40, color: '#64748b' }}>
-              No results match the selected search, topic, and status.
+              {hasInvalidDateRange
+                ? 'The start date must be on or before the end date.'
+                : 'No results match the selected search, topic, status, and date range.'}
             </div>
           ) : (
             <div className="table-container">
