@@ -107,6 +107,13 @@ export default function StudentProgress({ token, setActiveTab }) {
     return 'badge-neutral'
   }
 
+  const averagePercentage = attempts.length
+    ? Math.round(attempts.reduce((sum, attempt) => sum + attempt.percentage, 0) / attempts.length)
+    : 0
+  const highestPercentage = attempts.length
+    ? attempts.reduce((highest, attempt) => Math.max(highest, attempt.percentage), 0)
+    : 0
+
   return (
     <div className="container">
       <div className="page-header">
@@ -133,6 +140,26 @@ export default function StudentProgress({ token, setActiveTab }) {
         </div>
       ) : (
         <>
+          <div className="grid-3">
+            <div className="card">
+              <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>All-time attempts</p>
+              <p style={{ margin: '8px 0 0', color: '#1e293b', fontSize: '1.8rem', fontWeight: 700 }}>
+                {attempts.length}
+              </p>
+            </div>
+            <div className="card">
+              <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>Average score</p>
+              <p style={{ margin: '8px 0 0', color: '#1e293b', fontSize: '1.8rem', fontWeight: 700 }}>
+                {averagePercentage}%
+              </p>
+            </div>
+            <div className="card">
+              <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>Best score</p>
+              <p style={{ margin: '8px 0 0', color: '#1e293b', fontSize: '1.8rem', fontWeight: 700 }}>
+                {highestPercentage}%
+              </p>
+            </div>
+          </div>
           <div className="filter-bar">
             <input
               type="search"
