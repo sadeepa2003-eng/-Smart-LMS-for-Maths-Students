@@ -3,12 +3,14 @@ import React, { useEffect, useState } from 'react'
 export default function TeacherResultsMonitor({ token }) {
   const [attempts, setAttempts] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
+  const [topicFilter, setTopicFilter] = useState('All')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   const API_URL = 'http://localhost:5000/api'
   const normalizedSearch = searchQuery.trim().toLocaleLowerCase()
   const filteredAttempts = attempts.filter((attempt) =>
+    (topicFilter === 'All' || attempt.topic === topicFilter) &&
     [
       attempt.studentId?.name || '',
       attempt.studentId?.email || '',
@@ -73,10 +75,22 @@ export default function TeacherResultsMonitor({ token }) {
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
             />
+            <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#475569' }}>Filter by Topic:</span>
+            {['All', 'Algebra', 'Geometry', 'Straight Lines'].map((topic) => (
+              <button
+                key={topic}
+                type="button"
+                className={`filter-btn ${topicFilter === topic ? 'active' : ''}`}
+                aria-pressed={topicFilter === topic}
+                onClick={() => setTopicFilter(topic)}
+              >
+                {topic}
+              </button>
+            ))}
           </div>
           {filteredAttempts.length === 0 ? (
             <div className="card" style={{ textAlign: 'center', padding: 40, color: '#64748b' }}>
-              No results match “{searchQuery.trim()}”.
+              No results match the selected topic and search.
             </div>
           ) : (
             <div className="table-container">
