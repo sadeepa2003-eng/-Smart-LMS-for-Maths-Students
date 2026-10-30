@@ -51,6 +51,14 @@ export default function StudentProgress({ token, setActiveTab }) {
     setEndDate('')
   }
 
+  function showTopicAttempts(topic) {
+    setTopicFilter(topic)
+    document.getElementById('attempt-history')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    })
+  }
+
   function exportFilteredAttempts() {
     const csvCell = (value) => {
       const text = String(value ?? '')
@@ -205,10 +213,21 @@ export default function StudentProgress({ token, setActiveTab }) {
                     </div>
                   </>
                 )}
+                {count > 0 && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    style={{ marginTop: 12 }}
+                    aria-label={`View ${topic} attempts`}
+                    onClick={() => showTopicAttempts(topic)}
+                  >
+                    View attempts
+                  </button>
+                )}
               </div>
             ))}
           </div>
-          <div className="filter-bar">
+          <div className="filter-bar" id="attempt-history">
             <input
               type="search"
               className="form-input quiz-search-input"
