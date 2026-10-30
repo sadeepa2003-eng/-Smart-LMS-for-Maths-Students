@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 
 export default function TeacherLessonManager({ token }) {
   const [lessons, setLessons] = useState([])
+  const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -16,6 +17,10 @@ export default function TeacherLessonManager({ token }) {
   const [saving, setSaving] = useState(false)
 
   const API_URL = 'http://localhost:5000/api'
+  const normalizedSearch = searchQuery.trim().toLocaleLowerCase()
+  const filteredLessons = lessons.filter((lesson) =>
+    `${lesson.title} ${lesson.topic} ${lesson.content}`.toLocaleLowerCase().includes(normalizedSearch)
+  )
 
   useEffect(() => {
     fetchLessons()
@@ -207,15 +212,31 @@ export default function TeacherLessonManager({ token }) {
       )}
 
       {/* Lessons List */}
+      {!loading && lessons.length > 0 && (
+        <div className="filter-bar">
+          <input
+            type="search"
+            className="form-input lesson-search-input"
+            aria-label="Search managed lessons by title, topic, or content"
+            placeholder="Search lessons by title, topic, or content"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+          />
+        </div>
+      )}
       {loading ? (
         <p>Loading lessons...</p>
       ) : lessons.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: 40, color: '#64748b' }}>
           No lessons found. Click "Add New Lesson" above to publish one.
         </div>
+      ) : filteredLessons.length === 0 ? (
+        <div className="card" style={{ textAlign: 'center', padding: 40, color: '#64748b' }}>
+          No lessons match “{searchQuery.trim()}”.
+        </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {lessons.map((lesson) => (
+          {filteredLessons.map((lesson) => (
             <div key={lesson._id} className="card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 10 }}>
                 <div>
