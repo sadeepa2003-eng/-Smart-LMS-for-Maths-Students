@@ -5,20 +5,31 @@ export default function StudentProgress({ token, setActiveTab }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [topicFilter, setTopicFilter] = useState('All')
   const [statusFilter, setStatusFilter] = useState('All')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
   const [sortOrder, setSortOrder] = useState('newest')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   const API_URL = 'http://localhost:5000/api'
   const normalizedSearch = searchQuery.trim().toLocaleLowerCase()
-  const hasActiveFilters = normalizedSearch !== '' || topicFilter !== 'All' || statusFilter !== 'All'
-  const filteredAttempts = attempts.filter((attempt) =>
-    (topicFilter === 'All' || attempt.topic === topicFilter) &&
-    (statusFilter === 'All' || attempt.recommendationLevel === statusFilter) &&
-    `${attempt.quizTitle} ${attempt.topic} ${attempt.recommendation}`
-      .toLocaleLowerCase()
-      .includes(normalizedSearch)
-  )
+  const hasInvalidDateRange = startDate !== '' && endDate !== '' && startDate > endDate
+  const hasActiveFilters = normalizedSearch !== '' || topicFilter !== 'All' || statusFilter !== 'All' ||
+    startDate !== '' || endDate !== ''
+  const filteredAttempts = hasInvalidDateRange
+    ? []
+    : attempts.filter((attempt) => {
+        const attemptDate = new Date(attempt.submittedAt).toISOString().slice(0, 10)
+        return (
+          (topicFilter === 'All' || attempt.topic === topicFilter) &&
+          (statusFilter === 'All' || attempt.recommendationLevel === statusFilter) &&
+          (!startDate || attemptDate >= startDate) &&
+          (!endDate || attemptDate <= endDate) &&
+          `${attempt.quizTitle} ${attempt.topic} ${attempt.recommendation}`
+            .toLocaleLowerCase()
+            .includes(normalizedSearch)
+        )
+      })
   const sortedAttempts = [...filteredAttempts].sort((first, second) => {
     if (sortOrder === 'oldest') {
       return new Date(first.submittedAt) - new Date(second.submittedAt)
@@ -36,6 +47,8 @@ export default function StudentProgress({ token, setActiveTab }) {
     setSearchQuery('')
     setTopicFilter('All')
     setStatusFilter('All')
+    setStartDate('')
+    setEndDate('')
   }
 
   function exportFilteredAttempts() {
@@ -143,6 +156,28 @@ export default function StudentProgress({ token, setActiveTab }) {
                 <option value="lowest-score">Lowest score</option>
               </select>
             </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600, fontSize: '0.9rem', color: '#475569' }}>
+              From:
+              <input
+                type="date"
+                className="form-input"
+                aria-label="Filter attempts from date"
+                max={endDate || undefined}
+                value={startDate}
+                onChange={(event) => setStartDate(event.target.value)}
+              />
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600, fontSize: '0.9rem', color: '#475569' }}>
+              To:
+              <input
+                type="date"
+                className="form-input"
+                aria-label="Filter attempts through date"
+                min={startDate || undefined}
+                value={endDate}
+                onChange={(event) => setEndDate(event.target.value)}
+              />
+            </label>
             <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#475569' }}>Filter by Topic:</span>
             {['All', 'Algebra', 'Geometry', 'Straight Lines'].map((topic) => (
               <button
@@ -192,7 +227,11 @@ export default function StudentProgress({ token, setActiveTab }) {
           </div>
           {filteredAttempts.length === 0 ? (
             <div className="card" style={{ textAlign: 'center', padding: 40, color: '#64748b' }}>
-              <p>No attempts match the selected search and filters.</p>
+              <p>
+                {hasInvalidDateRange
+                  ? 'The start date must be on or before the end date.'
+                  : 'No attempts match the selected search and filters.'}
+              </p>
               <button
                 type="button"
                 className="btn btn-secondary btn-sm"
